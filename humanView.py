@@ -14,7 +14,8 @@ minimap
 VERSION = '0.01'
 
 LINE_SPACING = 100
-BACKGROUND = (50,0,50)
+FOG_SPACING = 25
+BACKGROUND = (5,0,20)
 FOG_COLOR = (0,0,0)
 
 import pygame as pg
@@ -90,8 +91,21 @@ class HumanView():
 		print "End setup"
 	
 	def start_perma_fog(self, size):
-		num = size / LINE_SPACING
-		self.perma_fog = [[1]*num]*num
+		num = size / FOG_SPACING
+		for i in range(num):
+			self.perma_fog.append([1]*num)
+
+	def update_perma_fog(self, comms):
+		num = len(self.perma_fog)
+		for s in comms:
+			radius = int(s.visionLength/FOG_SPACING)
+			x,y = int(s.location[0]/FOG_SPACING), int(s.location[1]/FOG_SPACING)
+			for i in range(0,radius+1):
+				for j in range(0,int((radius**2-i**2)**0.5)+1):
+					self.perma_fog[(x+i)%num][(y+j)%num] = 0
+					self.perma_fog[(x-i)%num][(y+j)%num] = 0
+					self.perma_fog[(x+i)%num][(y-j)%num] = 0
+					self.perma_fog[(x-i)%num][(y-j)%num] = 0
 
 	def ready(self):
 		self.view_x = self.u.planets[self.team_index].location[0] - self.screen_width/2
@@ -186,7 +200,6 @@ class HumanView():
 		if ship == None:
 			ship = types[type](t, 0)	# make new ship
 			t.acquireShip(ship, (0,0), ship_index)
-			print "New ship made for team %d of type %s and index %d" %(t.index, ship.type, ship.index)
 		if ship.type != type: print "Ship types don't match: index %d, type %s, ship type %s" %(ship_index, type, ship.type)
 		return ship
 	
@@ -317,6 +330,7 @@ class HumanView():
 			self.total += deltat
 			
 			vis = self.t.visible[:]
+			comms = self.t.commsNetwork[:]
 			move_x = move_y = 0
 			old_zoom = self.zoom
 			old_view_x = self.view_x
@@ -571,7 +585,7 @@ class HumanView():
 				extra_screens += 1
 			'''
 			
-			LINE_WIDTH = 1
+			LINE_WIDTH = 3
 			offset_x = (-(old_view_x) % LINE_SPACING) / old_zoom
 			offset_y = (-(old_view_y) % LINE_SPACING) / old_zoom
 			
@@ -586,24 +600,29 @@ class HumanView():
 				pg.draw.line(self.screen, BACKGROUND,
 					(0, offset_y + i), (usize, offset_y+i), LINE_WIDTH)
 			
-			offset_x = int(old_view_x / LINE_SPACING)
-			offset_y = int(old_view_y / LINE_SPACING)
-			for i in range(offset_x, offset_x + int(self.screen_width / (LINE_SPACING*old_zoom))+1):
-				i -= (i>self.u.size*1000/LINE_SPACING)*self.u.size*1000/LINE_SPACING
-				for j in range(offset_y, offset_y + int(self.screen_height / (LINE_SPACING*old_zoom))+1):
-					j -= (i>self.u.size*1000/LINE_SPACING)*self.u.size*1000/LINE_SPACING
+			offset_x = int(old_view_x / FOG_SPACING)
+			offset_y = int(old_view_y / FOG_SPACING)
+			num = usize/FOG_SPACING
+			'''
+			for i in range(offset_x, offset_x + int(self.screen_width * old_zoom / FOG_SPACING)+1):
+				i = i % num
+				for j in range(offset_y, offset_y + int(self.screen_height * old_zoom / FOG_SPACING)+1):
+					j = j % num
 					if self.perma_fog[i][j]:
+					
 						pg.draw.rect(self.image, BACKGROUND,
-						((i*LINE_SPACING-old_view_x)/old_zoom,
-						(j*LINE_SPACING-old_view_y)/old_zoom,
-						LINE_SPACING / old_zoom,
-						LINE_SPACING / old_zoom))
+						((((i+1)*FOG_SPACING-old_view_x)%usize-FOG_SPACING)/old_zoom,
+						(((j+1)*FOG_SPACING-old_view_y)%usize-FOG_SPACING)/old_zoom,
+						FOG_SPACING / old_zoom+1,
+						FOG_SPACING / old_zoom+1))
+						
 						pg.draw.rect(self.screen, BACKGROUND,
-						((i*LINE_SPACING-old_view_x)/old_zoom,
-						(j*LINE_SPACING-old_view_y)/old_zoom,
-						LINE_SPACING / old_zoom,
-						LINE_SPACING / old_zoom))
-			
+						((((i+1)*FOG_SPACING-old_view_x)%usize-FOG_SPACING)/old_zoom,
+						(((j+1)*FOG_SPACING-old_view_y)%usize-FOG_SPACING)/old_zoom,
+						FOG_SPACING / old_zoom+1,
+						FOG_SPACING / old_zoom+1))
+						
+			'''
 			offset_x = (-self.view_x % LINE_SPACING) / self.zoom
 			offset_y = (-self.view_y % LINE_SPACING) / self.zoom
 			for i in range(0, self.screen_width, int(LINE_SPACING/self.zoom)):
@@ -616,25 +635,26 @@ class HumanView():
 					(0, offset_y + i), (usize, offset_y+i), LINE_WIDTH)
 				pg.draw.line(self.screen, (255,255,255),
 					(0, offset_y + i), (usize, offset_y+i), LINE_WIDTH)
-			
-			offset_x = int(old_view_x / LINE_SPACING)
-			offset_y = int(old_view_y / LINE_SPACING)
-			for i in range(offset_x, offset_x + int(self.screen_width / (LINE_SPACING*old_zoom))+1):
-				i -= (i>self.u.size*1000/LINE_SPACING)*self.u.size*1000/LINE_SPACING
-				for j in range(offset_y, offset_y + int(self.screen_height / (LINE_SPACING*old_zoom))+1):
-					j -= (i>self.u.size*1000/LINE_SPACING)*self.u.size*1000/LINE_SPACING
+			'''
+			offset_x = int(self.view_x / FOG_SPACING)
+			offset_y = int(self.view_y / FOG_SPACING)
+			for i in range(offset_x, offset_x + int(self.screen_width * self.zoom / FOG_SPACING)+1):
+				i = i % num
+				for j in range(offset_y, offset_y + int(self.screen_height * self.zoom / FOG_SPACING)+1):
+					j = j % num
 					if self.perma_fog[i][j]:
-						#print "fog at (%d, %d)" %(i*LINE_SPACING, j*LINE_SPACING)
+						
 						pg.draw.rect(self.image, FOG_COLOR,
-						((i*LINE_SPACING-self.view_x)/self.zoom,
-						(j*LINE_SPACING-self.view_y)/self.zoom,
-						LINE_SPACING / self.zoom,
-						LINE_SPACING / self.zoom))
+						((((i+1)*FOG_SPACING-self.view_x)%usize-FOG_SPACING)/self.zoom,
+						(((j+1)*FOG_SPACING-self.view_y)%usize-FOG_SPACING)/self.zoom,
+						FOG_SPACING / self.zoom+1,
+						FOG_SPACING / self.zoom+1))
+						
 						pg.draw.rect(self.screen, FOG_COLOR,
-						((i*LINE_SPACING-self.view_x)/self.zoom,
-						(j*LINE_SPACING-self.view_y)/self.zoom,
-						LINE_SPACING / self.zoom,
-						LINE_SPACING / self.zoom))
+						((((i+1)*FOG_SPACING-self.view_x)%usize-FOG_SPACING)/self.zoom,
+						(((j+1)*FOG_SPACING-self.view_y)%usize-FOG_SPACING)/self.zoom,
+						FOG_SPACING / self.zoom+1,
+						FOG_SPACING / self.zoom+1))
 			'''
 			image = self.u.total.subsurface(self.view_x, self.view_y,
 				width, height)
@@ -701,6 +721,7 @@ class HumanView():
 				fogReady.clear()
 			#self.image.blit(self.fog.image, (0,0))
 			
+			
 			self.screen.blit(self.image, (self.screen_width-self.infoMeter.rect.width, 0),
 				(self.screen_width-self.infoMeter.rect.width, 0,
 				self.infoMeter.rect.width, self.infoMeter.rect.height))
@@ -736,6 +757,7 @@ class HumanView():
 			if fogReady.is_set():
 				pg.time.wait(30)
 			else:
+				self.update_perma_fog(self.t.commsNetwork)
 				self.updateFog()
 				fogReady.set()
 
