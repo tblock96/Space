@@ -5,11 +5,15 @@ their team, the universe main image (white grid), and
 any other planets that the team has discovered
 '''
 
-'''FEATURES:
+'''
+FEATURES:
 Time scaling (1 player) and suggestions (2 player)
 Showing where the user has explored
 	^ is done for easy mode -- keeping track for when the ship is out of comms will be more complicated
 minimap
+loss of comms boots ship from controlGroup
+BUGS:
+
 '''
 
 VERSION = '0.02'
@@ -51,8 +55,8 @@ class HumanView():
 	def __init__(self, host, port, screen_size):
 		self.isReady = False
 		pg.init()
-		self.sock = socket.socket()
-		self.sock.connect((host, port))
+		self.sock = socket.socket(socket.AF_INET6)
+		self.sock.connect((host, port,0,0))
 		print self.sock.getsockname()
 		self.f = self.sock.makefile()
 		self.decoder = json.JSONDecoder()
@@ -366,8 +370,8 @@ class HumanView():
 					if p.type != 'planet': continue
 					if p.rect == 0: continue
 					p.hover = 0
-					if abs((mouse_x*self.zoom + self.view_x - p.rect.x) % usize) < 100:
-						if abs((mouse_y*self.zoom + self.view_y - p.rect.y) % usize) < 100:
+					if abs((mouse_x*self.zoom + self.view_x) % usize - p.location[0]) < 55:
+						if abs((mouse_y*self.zoom + self.view_y) % usize - p.location[1]) < 55:
 							p.hover = 1
 							hoverPlanet = p
 			
@@ -696,9 +700,9 @@ class HumanView():
 					self.teamsDiscovered.append(s.team)
 			
 			for s in drawn: # cover
-				#5 = ((20 - 0)%200 - 10) / 0.5
-				x = ((s.rect.right - (old_view_x)) % usize - s.rect.width*0.5) / old_zoom - s.rect.width*0.5
-				y = ((s.rect.bottom - (old_view_y)) % usize - s.rect.height*0.5)/old_zoom - s.rect.height*0.5
+			
+				x = ((s.rect.right - old_view_x) % usize - s.rect.width*0.5) / old_zoom - s.rect.width*0.5
+				y = ((s.rect.bottom - old_view_y) % usize - s.rect.height*0.5)/old_zoom - s.rect.height*0.5
 				self.screen.blit(self.image, (x,y), (x,y,s.rect.width,s.rect.height))
 				
 			for s in vis: # draw
@@ -767,7 +771,7 @@ class HumanView():
 
 if __name__ == '__main__':
 	screen_size = (1000,600)
-	host = 'localhost' #str(input("Input host:\n"))
+	host = str(input("Input host:\n")) #'2a02:c7d:867:af00:e018:201f:a004:729e' #'localhost' #'fda1:df66:551c:0:e018:201f:a004:729e' #str(input("Input host:\n"))
 	port = 50000 # int(input("Input port:\n"))
 	hv = HumanView(host, port, screen_size)
 	t = threading.Thread(name = 'receive', target = hv.receive_loop)

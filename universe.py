@@ -25,7 +25,7 @@ class Universe(pg.sprite.Sprite):
 	sockets = {}
 	files = {}
 	
-	def __init__(self, size, numTeams):
+	def __init__(self, size, numTeams, easy = 0):
 		pg.sprite.Sprite.__init__(self)
 		self.size = size * 1000
 		numPlanets = int(size**2/3)
@@ -34,7 +34,7 @@ class Universe(pg.sprite.Sprite):
 		for i in range(numPlanets):		# init planets
 			self.planets[i] = planet.Planet(self, i)
 		for i in range(numTeams):		# init teams
-			self.teams[i] = team.Team(self, i, True)
+			self.teams[i] = team.Team(self, i, easy)
 			if not client:
 				self.teams[i].getHomePlanet(self.planets)
 			if i == 0:
@@ -321,7 +321,8 @@ def setup():
 	pg.init()
 	
 	# Universe(size, teams)
-	u = Universe(SIZE,TEAMS)
+	easy = input('Comms infinite? (1/0)\n')
+	u = Universe(SIZE,TEAMS, easy)
 	
 	for t in u.teams.values():	# give initial armada
 		t.acquireShip(ship.Settler(t, t.planets[t.index]),
@@ -337,11 +338,13 @@ def setup():
 			[t.planets.values()[0].location[0],
 			t.planets.values()[0].location[1]-100])
 		if t.index > -1:
+			'''
 			if t.index == 2:
 				for _ in range(3):
 					t.acquireShip(ship.Battleship(t, t.planets[t.index]),
 						[t.planets.values()[0].location[0],
 						t.planets.values()[0].location[1]-100])
+			'''
 			t.removeFromAG(t.shipGroup.sprites())
 			ag = t.makeAG(t.shipGroup.sprites())
 			'''
@@ -352,11 +355,14 @@ def setup():
 			'''
 		t.update(0)
 
-	sock = socket.socket()
+	sock = socket.socket(socket.AF_INET6)
 	sock.bind(('', 50000))
 	sock.listen(NUM_HUMANS)
 	get_connections(u, sock)
 	
 if __name__ == "__main__":
 	client = False
+	SIZE = input("How big (in 1000s) would you like the map to be?\n")
+	TEAMS = input("How many teams?\n")
+	NUM_HUMANS = input("How many human players?\n")
 	setup()

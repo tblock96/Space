@@ -173,6 +173,7 @@ class InfoMeter(pg.sprite.Sprite):
 		lines.append('  Material: '+str(int(spr.cache['material'])))
 		lines.append('  Energy: '+str(int(spr.cache['energy'])))
 		lines.append('  Food: '+str(int(spr.cache['food'])))
+		lines.append('Location: '+str(spr.location))
 		return lines
 	
 	def getShipLines(self, spr):
