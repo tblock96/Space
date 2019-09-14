@@ -42,8 +42,8 @@ class HumanView():
 	def __init__(self, host, port, screen_size):
 		self.isReady = False
 		pg.init()
-		self.sock = socket.socket()
-		self.sock.connect((host, port))
+		self.sock = socket.socket(socket.AF_INET6)
+		self.sock.connect((host, port,0,0))
 		print self.sock.getsockname()
 		self.f = self.sock.makefile()
 		self.decoder = json.JSONDecoder()
@@ -693,7 +693,7 @@ class HumanView():
 
 if __name__ == '__main__':
 	screen_size = (1000,600)
-	host = 'localhost' #str(input("Input host:\n"))
+	host = str(input("Input host:\n")) #'2a02:c7d:867:af00:e018:201f:a004:729e' #'localhost' #'fda1:df66:551c:0:e018:201f:a004:729e' #str(input("Input host:\n"))
 	port = 50000 # int(input("Input port:\n"))
 	hv = HumanView(host, port, screen_size)
 	t = threading.Thread(name = 'receive', target = hv.receive_loop)

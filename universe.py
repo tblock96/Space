@@ -352,11 +352,14 @@ def setup():
 			'''
 		t.update(0)
 
-	sock = socket.socket()
+	sock = socket.socket(socket.AF_INET6)
 	sock.bind(('', 50000))
 	sock.listen(NUM_HUMANS)
 	get_connections(u, sock)
 	
 if __name__ == "__main__":
 	client = False
+	SIZE = input("How big (in 1000s) would you like the map to be?\n")
+	TEAMS = input("How many teams?\n")
+	NUM_HUMANS = input("How many human players?\n")
 	setup()
