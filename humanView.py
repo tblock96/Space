@@ -7,9 +7,15 @@ any other planets that the team has discovered
 
 '''FEATURES:
 Time scaling (1 player) and suggestions (2 player)
+Showing where the user has explored
+minimap
 '''
 
 VERSION = '0.01'
+
+LINE_SPACING = 100
+BACKGROUND = (50,0,50)
+FOG_COLOR = (0,0,0)
 
 import pygame as pg
 from pygame.locals import *
@@ -37,6 +43,7 @@ class HumanView():
 	teamsDiscovered = []
 	planetsDiscovered = []
 	bullets = {}
+	perma_fog = []
 	msg = ''
 
 	def __init__(self, host, port, screen_size):
@@ -64,7 +71,7 @@ class HumanView():
 		self.fog = mM.Fog(self.screen_width, self.screen_height, (self.objectGroup))
 		
 		self.coverSurf = pg.Surface((self.meter.rect.w, self.meter.rect.h))
-		self.coverSurf.fill((15,0,15))
+		self.coverSurf.fill(BACKGROUND)
 		
 		self.frames = 0
 		self.clock = pg.time.Clock()
@@ -73,14 +80,19 @@ class HumanView():
 		print "Begin setup"
 		if line['version'] != VERSION:
 			print "Wrong version! Update to " + line['version']
-			sys.exit()
+			print "Game may not work as expected!\n\n\n\n\n"
 		self.team_index = line['team']
 		size = line['size']
 		numTeams = line['numTeams']
 		self.u = universe.Universe(size/1000, numTeams)
 		self.t = self.u.teams[self.team_index]
+		self.start_perma_fog(size)
 		print "End setup"
 	
+	def start_perma_fog(self, size):
+		num = size / LINE_SPACING
+		self.perma_fog = [[1]*num]*num
+
 	def ready(self):
 		self.view_x = self.u.planets[self.team_index].location[0] - self.screen_width/2
 		self.view_y = self.u.planets[self.team_index].location[1] - self.screen_height/2
@@ -297,7 +309,7 @@ class HumanView():
 		self.frames = 1
 		usize = self.u.size
 		self.image = pg.Surface((self.screen_width, self.screen_height))
-		self.image.fill((10,0,10))
+		self.image.fill(BACKGROUND)
 		self.screen.blit(self.image, (0,0))
 		drawn = []
 		while len(self.t.shipGroup) > 0:
@@ -541,8 +553,8 @@ class HumanView():
 				if self.back:
 					self.planetFocus = 0
 					self.view_x, self.view_y = self.old_view
-					self.screen.fill((10,0,10))
-					self.image.fill((10,0,10))
+					self.screen.fill(BACKGROUND)
+					self.image.fill(BACKGROUND)
 				pg.display.flip()
 				continue
 				
@@ -559,34 +571,70 @@ class HumanView():
 				extra_screens += 1
 			'''
 			
+			LINE_WIDTH = 1
+			offset_x = (-(old_view_x) % LINE_SPACING) / old_zoom
+			offset_y = (-(old_view_y) % LINE_SPACING) / old_zoom
 			
-			offset_x = (-(old_view_x) % 500) / old_zoom
-			offset_y = (-(old_view_y) % 500) / old_zoom
+			for i in range(0, self.screen_width, int(LINE_SPACING/old_zoom)):
+				pg.draw.line(self.image, BACKGROUND,
+					(offset_x+i, 0), (offset_x+i, usize), LINE_WIDTH)
+				pg.draw.line(self.screen, BACKGROUND,
+					(offset_x+i, 0), (offset_x+i, usize), LINE_WIDTH)
+			for i in range(0, self.screen_height, int(LINE_SPACING/old_zoom)):
+				pg.draw.line(self.image, BACKGROUND,
+					(0, offset_y + i), (usize, offset_y+i), LINE_WIDTH)
+				pg.draw.line(self.screen, BACKGROUND,
+					(0, offset_y + i), (usize, offset_y+i), LINE_WIDTH)
 			
-			for i in range(0, self.screen_width, int(500/old_zoom)):
-				pg.draw.line(self.image, (10,0,10),
-					(offset_x+i, 0), (offset_x+i, usize), 3)
-				pg.draw.line(self.screen, (10,0,10),
-					(offset_x+i, 0), (offset_x+i, usize), 3)
-			for i in range(0, self.screen_height, int(500/old_zoom)):
-				pg.draw.line(self.image, (10,0,10),
-					(0, offset_y + i), (usize, offset_y+i), 3)
-				pg.draw.line(self.screen, (10,0,10),
-					(0, offset_y + i), (usize, offset_y+i), 3)
-					
-			offset_x = (-self.view_x % 500) / self.zoom
-			offset_y = (-self.view_y % 500) / self.zoom
-			for i in range(0, self.screen_width, int(500/self.zoom)):
+			offset_x = int(old_view_x / LINE_SPACING)
+			offset_y = int(old_view_y / LINE_SPACING)
+			for i in range(offset_x, offset_x + int(self.screen_width / (LINE_SPACING*old_zoom))+1):
+				i -= (i>self.u.size*1000/LINE_SPACING)*self.u.size*1000/LINE_SPACING
+				for j in range(offset_y, offset_y + int(self.screen_height / (LINE_SPACING*old_zoom))+1):
+					j -= (i>self.u.size*1000/LINE_SPACING)*self.u.size*1000/LINE_SPACING
+					if self.perma_fog[i][j]:
+						pg.draw.rect(self.image, BACKGROUND,
+						((i*LINE_SPACING-old_view_x)/old_zoom,
+						(j*LINE_SPACING-old_view_y)/old_zoom,
+						LINE_SPACING / old_zoom,
+						LINE_SPACING / old_zoom))
+						pg.draw.rect(self.screen, BACKGROUND,
+						((i*LINE_SPACING-old_view_x)/old_zoom,
+						(j*LINE_SPACING-old_view_y)/old_zoom,
+						LINE_SPACING / old_zoom,
+						LINE_SPACING / old_zoom))
+			
+			offset_x = (-self.view_x % LINE_SPACING) / self.zoom
+			offset_y = (-self.view_y % LINE_SPACING) / self.zoom
+			for i in range(0, self.screen_width, int(LINE_SPACING/self.zoom)):
 				pg.draw.line(self.image, (255,255,255),
-					(offset_x+i, 0), (offset_x+i, usize), 3)
+					(offset_x+i, 0), (offset_x+i, usize), LINE_WIDTH)
 				pg.draw.line(self.screen, (255,255,255),
-					(offset_x+i, 0), (offset_x+i, usize), 3)
-			for i in range(0, self.screen_height, int(500/self.zoom)):
+					(offset_x+i, 0), (offset_x+i, usize), LINE_WIDTH)
+			for i in range(0, self.screen_height, int(LINE_SPACING/self.zoom)):
 				pg.draw.line(self.image, (255,255,255),
-					(0, offset_y + i), (usize, offset_y+i), 3)
+					(0, offset_y + i), (usize, offset_y+i), LINE_WIDTH)
 				pg.draw.line(self.screen, (255,255,255),
-					(0, offset_y + i), (usize, offset_y+i), 3)
+					(0, offset_y + i), (usize, offset_y+i), LINE_WIDTH)
 			
+			offset_x = int(old_view_x / LINE_SPACING)
+			offset_y = int(old_view_y / LINE_SPACING)
+			for i in range(offset_x, offset_x + int(self.screen_width / (LINE_SPACING*old_zoom))+1):
+				i -= (i>self.u.size*1000/LINE_SPACING)*self.u.size*1000/LINE_SPACING
+				for j in range(offset_y, offset_y + int(self.screen_height / (LINE_SPACING*old_zoom))+1):
+					j -= (i>self.u.size*1000/LINE_SPACING)*self.u.size*1000/LINE_SPACING
+					if self.perma_fog[i][j]:
+						#print "fog at (%d, %d)" %(i*LINE_SPACING, j*LINE_SPACING)
+						pg.draw.rect(self.image, FOG_COLOR,
+						((i*LINE_SPACING-self.view_x)/self.zoom,
+						(j*LINE_SPACING-self.view_y)/self.zoom,
+						LINE_SPACING / self.zoom,
+						LINE_SPACING / self.zoom))
+						pg.draw.rect(self.screen, FOG_COLOR,
+						((i*LINE_SPACING-self.view_x)/self.zoom,
+						(j*LINE_SPACING-self.view_y)/self.zoom,
+						LINE_SPACING / self.zoom,
+						LINE_SPACING / self.zoom))
 			'''
 			image = self.u.total.subsurface(self.view_x, self.view_y,
 				width, height)
