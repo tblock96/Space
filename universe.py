@@ -338,11 +338,13 @@ def setup():
 			[t.planets.values()[0].location[0],
 			t.planets.values()[0].location[1]-100])
 		if t.index > -1:
+			'''
 			if t.index == 2:
 				for _ in range(3):
 					t.acquireShip(ship.Battleship(t, t.planets[t.index]),
 						[t.planets.values()[0].location[0],
 						t.planets.values()[0].location[1]-100])
+			'''
 			t.removeFromAG(t.shipGroup.sprites())
 			ag = t.makeAG(t.shipGroup.sprites())
 			'''

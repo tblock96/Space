@@ -93,7 +93,7 @@ def get_threat_rank(threats, ship):
 			if t.hp <= 0: continue
 		inserted = False
 		try:
-			score = t.power/get_dist_planets(t, ship, ship.team.usize)
+			score = t.power
 			if t.type == 'carrier':
 				if len(t.boarders) > 0: # biggest threat, biggest chance for win
 					score = 1000

@@ -308,7 +308,7 @@ class Team():
 									targ1 = [sorted_ships[i].baseTarget[0], sorted_ships[i].baseTarget[1]]
 										# replace with coordinates to move to after battle
 								'''
-								sorted_ships[i].target = [threat_rank[i%len(threat_rank)], targ1, self.usize]
+								sorted_ships[i].target = [threat_rank[int(i/len(sorted_ships)*len(threat_rank))], targ1, self.usize]
 						else: # patrol
 							for i in range(len(sorted_ships)):
 								s = sorted_ships[i]
