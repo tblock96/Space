@@ -25,7 +25,7 @@ class Universe(pg.sprite.Sprite):
 	sockets = {}
 	files = {}
 	
-	def __init__(self, size, numTeams):
+	def __init__(self, size, numTeams, easy = 0):
 		pg.sprite.Sprite.__init__(self)
 		self.size = size * 1000
 		numPlanets = int(size**2/3)
@@ -34,7 +34,7 @@ class Universe(pg.sprite.Sprite):
 		for i in range(numPlanets):		# init planets
 			self.planets[i] = planet.Planet(self, i)
 		for i in range(numTeams):		# init teams
-			self.teams[i] = team.Team(self, i, True)
+			self.teams[i] = team.Team(self, i, easy)
 			if not client:
 				self.teams[i].getHomePlanet(self.planets)
 			if i == 0:
@@ -321,7 +321,8 @@ def setup():
 	pg.init()
 	
 	# Universe(size, teams)
-	u = Universe(SIZE,TEAMS)
+	easy = input('Comms infinite? (1/0)\n')
+	u = Universe(SIZE,TEAMS, easy)
 	
 	for t in u.teams.values():	# give initial armada
 		t.acquireShip(ship.Settler(t, t.planets[t.index]),

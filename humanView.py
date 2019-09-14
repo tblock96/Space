@@ -7,6 +7,7 @@ any other planets that the team has discovered
 
 '''FEATURES:
 Time scaling (1 player) and suggestions (2 player)
+loss of comms boots ship from controlGroup
 '''
 
 VERSION = '0.01'
