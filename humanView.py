@@ -11,7 +11,7 @@ Showing where the user has explored
 minimap
 '''
 
-VERSION = '0.01'
+VERSION = '0.02'
 
 LINE_SPACING = 100
 FOG_SPACING = 25

@@ -4,7 +4,7 @@ A controller for all the planets in the game, as well as the teams, and also
 each ship (split up by teams).
 '''
 
-VERSION = '0.01'
+VERSION = '0.02'
 import pygame as pg
 import planet
 import unimath as um
