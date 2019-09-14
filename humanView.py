@@ -5,9 +5,12 @@ their team, the universe main image (white grid), and
 any other planets that the team has discovered
 '''
 
-'''FEATURES:
+'''
+FEATURES:
 Time scaling (1 player) and suggestions (2 player)
 loss of comms boots ship from controlGroup
+BUGS:
+
 '''
 
 VERSION = '0.01'
@@ -340,8 +343,8 @@ class HumanView():
 					if p.type != 'planet': continue
 					if p.rect == 0: continue
 					p.hover = 0
-					if abs((mouse_x*self.zoom + self.view_x - p.rect.x) % usize) < 100:
-						if abs((mouse_y*self.zoom + self.view_y - p.rect.y) % usize) < 100:
+					if abs((mouse_x*self.zoom + self.view_x) % usize - p.location[0]) < 55:
+						if abs((mouse_y*self.zoom + self.view_y) % usize - p.location[1]) < 55:
 							p.hover = 1
 							hoverPlanet = p
 			
@@ -625,9 +628,9 @@ class HumanView():
 					self.teamsDiscovered.append(s.team)
 			
 			for s in drawn: # cover
-				#5 = ((20 - 0)%200 - 10) / 0.5
-				x = ((s.rect.right - (old_view_x)) % usize - s.rect.width*0.5) / old_zoom - s.rect.width*0.5
-				y = ((s.rect.bottom - (old_view_y)) % usize - s.rect.height*0.5)/old_zoom - s.rect.height*0.5
+			
+				x = ((s.rect.right - old_view_x) % usize - s.rect.width*0.5) / old_zoom - s.rect.width*0.5
+				y = ((s.rect.bottom - old_view_y) % usize - s.rect.height*0.5)/old_zoom - s.rect.height*0.5
 				self.screen.blit(self.image, (x,y), (x,y,s.rect.width,s.rect.height))
 				
 			for s in vis: # draw
