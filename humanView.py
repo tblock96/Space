@@ -8,14 +8,15 @@ any other planets that the team has discovered
 '''FEATURES:
 Time scaling (1 player) and suggestions (2 player)
 Showing where the user has explored
+	^ is done for easy mode -- keeping track for when the ship is out of comms will be more complicated
 minimap
 '''
 
 VERSION = '0.02'
 
-LINE_SPACING = 100
-FOG_SPACING = 25
-BACKGROUND = (5,0,20)
+LINE_SPACING = 250
+FOG_SPACING = 125
+BACKGROUND = (15,0,60)
 FOG_COLOR = (0,0,0)
 
 import pygame as pg
@@ -102,10 +103,10 @@ class HumanView():
 			x,y = int(s.location[0]/FOG_SPACING), int(s.location[1]/FOG_SPACING)
 			for i in range(0,radius+1):
 				for j in range(0,int((radius**2-i**2)**0.5)+1):
-					self.perma_fog[(x+i)%num][(y+j)%num] = 0
-					self.perma_fog[(x-i)%num][(y+j)%num] = 0
-					self.perma_fog[(x+i)%num][(y-j)%num] = 0
-					self.perma_fog[(x-i)%num][(y-j)%num] = 0
+					self.perma_fog[(x+i)%num][(y+j)%num] = self.perma_fog[(x+i)%num][(y+j)%num] * 0.5
+					self.perma_fog[(x-i)%num][(y+j)%num] = self.perma_fog[(x-i)%num][(y+j)%num] * 0.5
+					self.perma_fog[(x+i)%num][(y-j)%num] = self.perma_fog[(x+i)%num][(y-j)%num] * 0.5
+					self.perma_fog[(x-i)%num][(y-j)%num] = self.perma_fog[(x-i)%num][(y-j)%num] * 0.5
 
 	def ready(self):
 		self.view_x = self.u.planets[self.team_index].location[0] - self.screen_width/2
@@ -585,6 +586,7 @@ class HumanView():
 				extra_screens += 1
 			'''
 			
+				# Clear lines
 			LINE_WIDTH = 3
 			offset_x = (-(old_view_x) % LINE_SPACING) / old_zoom
 			offset_y = (-(old_view_y) % LINE_SPACING) / old_zoom
@@ -600,29 +602,50 @@ class HumanView():
 				pg.draw.line(self.screen, BACKGROUND,
 					(0, offset_y + i), (usize, offset_y+i), LINE_WIDTH)
 			
+				# Clear fog
 			offset_x = int(old_view_x / FOG_SPACING)
 			offset_y = int(old_view_y / FOG_SPACING)
 			num = usize/FOG_SPACING
-			'''
-			for i in range(offset_x, offset_x + int(self.screen_width * old_zoom / FOG_SPACING)+1):
+			
+			for i in range(offset_x, offset_x + int(self.screen_width * old_zoom / FOG_SPACING)+2):
 				i = i % num
-				for j in range(offset_y, offset_y + int(self.screen_height * old_zoom / FOG_SPACING)+1):
+				for j in range(offset_y, offset_y + int(self.screen_height * old_zoom / FOG_SPACING)+2):
 					j = j % num
-					if self.perma_fog[i][j]:
-					
+					if self.perma_fog[i][j] > 0:
+						'''
 						pg.draw.rect(self.image, BACKGROUND,
 						((((i+1)*FOG_SPACING-old_view_x)%usize-FOG_SPACING)/old_zoom,
 						(((j+1)*FOG_SPACING-old_view_y)%usize-FOG_SPACING)/old_zoom,
 						FOG_SPACING / old_zoom+1,
 						FOG_SPACING / old_zoom+1))
-						
+						'''
 						pg.draw.rect(self.screen, BACKGROUND,
 						((((i+1)*FOG_SPACING-old_view_x)%usize-FOG_SPACING)/old_zoom,
 						(((j+1)*FOG_SPACING-old_view_y)%usize-FOG_SPACING)/old_zoom,
 						FOG_SPACING / old_zoom+1,
 						FOG_SPACING / old_zoom+1))
-						
-			'''
+						if self.perma_fog[i][j] < 1: self.perma_fog[i][j] = 0
+
+				# Update fog
+			for i in range(offset_x, offset_x + int(self.screen_width * self.zoom / FOG_SPACING)+2):
+				i = i % num
+				for j in range(offset_y, offset_y + int(self.screen_height * self.zoom / FOG_SPACING)+2):
+					j = j % num
+					if self.perma_fog[i][j]:
+						'''
+						pg.draw.rect(self.image, FOG_COLOR,
+						((((i+1)*FOG_SPACING-self.view_x)%usize-FOG_SPACING)/self.zoom,
+						(((j+1)*FOG_SPACING-self.view_y)%usize-FOG_SPACING)/self.zoom,
+						FOG_SPACING / self.zoom+1,
+						FOG_SPACING / self.zoom+1))
+						'''
+						pg.draw.rect(self.screen, FOG_COLOR,
+						((((i+1)*FOG_SPACING-self.view_x)%usize-FOG_SPACING)/self.zoom,
+						(((j+1)*FOG_SPACING-self.view_y)%usize-FOG_SPACING)/self.zoom,
+						FOG_SPACING / self.zoom+1,
+						FOG_SPACING / self.zoom+1))
+			
+				# Update lines
 			offset_x = (-self.view_x % LINE_SPACING) / self.zoom
 			offset_y = (-self.view_y % LINE_SPACING) / self.zoom
 			for i in range(0, self.screen_width, int(LINE_SPACING/self.zoom)):
@@ -635,26 +658,7 @@ class HumanView():
 					(0, offset_y + i), (usize, offset_y+i), LINE_WIDTH)
 				pg.draw.line(self.screen, (255,255,255),
 					(0, offset_y + i), (usize, offset_y+i), LINE_WIDTH)
-			'''
-			offset_x = int(self.view_x / FOG_SPACING)
-			offset_y = int(self.view_y / FOG_SPACING)
-			for i in range(offset_x, offset_x + int(self.screen_width * self.zoom / FOG_SPACING)+1):
-				i = i % num
-				for j in range(offset_y, offset_y + int(self.screen_height * self.zoom / FOG_SPACING)+1):
-					j = j % num
-					if self.perma_fog[i][j]:
-						
-						pg.draw.rect(self.image, FOG_COLOR,
-						((((i+1)*FOG_SPACING-self.view_x)%usize-FOG_SPACING)/self.zoom,
-						(((j+1)*FOG_SPACING-self.view_y)%usize-FOG_SPACING)/self.zoom,
-						FOG_SPACING / self.zoom+1,
-						FOG_SPACING / self.zoom+1))
-						
-						pg.draw.rect(self.screen, FOG_COLOR,
-						((((i+1)*FOG_SPACING-self.view_x)%usize-FOG_SPACING)/self.zoom,
-						(((j+1)*FOG_SPACING-self.view_y)%usize-FOG_SPACING)/self.zoom,
-						FOG_SPACING / self.zoom+1,
-						FOG_SPACING / self.zoom+1))
+			
 			'''
 			image = self.u.total.subsurface(self.view_x, self.view_y,
 				width, height)

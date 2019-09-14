@@ -18,7 +18,7 @@ class mouseMeter(pg.sprite.Sprite):
 	def __init__(self, groups):
 		pg.sprite.Sprite.__init__(self)
 		if not pg.font.get_init(): pg.font.init()
-		self.backColor = (10,0,10)
+		self.backColor = (0,0,0)
 		self.textColor = (255,255,255)
 		self.font = pg.font.SysFont('arial',14)
 		self.getImage(0,0,100,1,1,0)
@@ -39,7 +39,7 @@ class mouseMeter(pg.sprite.Sprite):
 		self.image = pg.Surface(textSz)
 		self.image.fill(self.backColor)
 		self.image.blit(textIm,(0,0))
-		self.image.set_colorkey(self.backColor)
+		#self.image.set_colorkey(self.backColor)
 		self.rect = self.image.get_rect()
 		info = pg.display.Info()
 		self.rect.center = (info.current_w-textSz[0]/2. ,info.current_h-textSz[1])
@@ -120,7 +120,7 @@ class InfoMeter(pg.sprite.Sprite):
 		pg.sprite.Sprite.__init__(self)
 		if not pg.font.get_init(): pg.font.init()
 		self.foreColor = (255,255,255)
-		self.backColor = (10,0,10)
+		self.backColor = (0,0,0)
 		self.font = pg.font.SysFont('arial', 14)
 		self.add(groups)
 		self.initBlankImg()
@@ -154,7 +154,7 @@ class InfoMeter(pg.sprite.Sprite):
 			for i in range(len(lines)):
 				txt = self.font.render(lines[i],True,self.foreColor,self.backColor)
 				self.image.blit(txt, (0, sizes[i][1]))
-		self.image.set_colorkey(self.backColor)
+		#self.image.set_colorkey(self.backColor)
 		self.image.convert_alpha()
 		self.rect = self.image.get_rect()
 	
