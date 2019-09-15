@@ -255,8 +255,63 @@ class Fog(pg.sprite.Sprite):
 		try:
 			self.image2 = self.image1.convert()
 		except Exception: pass
+		'''
 		# time_end = pg.time.get_ticks()
 		# print "Time after sprite loop: %d" %time_end
 			
 		# time_end = pg.time.get_ticks()
 		# print "Time after subbing fog image: %d" %time_end
+		'''
+		
+class Message(pg.sprite.Sprite):
+	
+	MESSAGE_TIME = 4000 # ms
+	BORDER_SIZE = 25
+	
+	def __init__(self, screen_w, screen_h, groups):
+		pg.sprite.Sprite.__init__(self)
+		if not pg.font.get_init(): pg.font.init()
+		self.backColor = [15,50,175]
+		self.textColor = (255,255,255)
+		self.font = pg.font.SysFont('arial',20)
+		self.add(groups)
+		self.messages = []
+		self.timer = 0
+		self.screen_size = (screen_w, screen_h)
+		self.location = [0,0]
+		self.update(0,[])
+		self.add(groups)
+		
+	def update(self, time, new_messages):
+		if self.timer <= 0:
+			self.messages = self.messages[1:] + new_messages
+			if len(self.messages) > 0:
+				self.timer = self.MESSAGE_TIME # ms
+		else: self.timer -= time
+		self.get_image()
+	
+	def get_image(self):
+		# fades based on timer
+		if self.timer == self.MESSAGE_TIME:
+			text = self.messages[0]
+			x,y = self.font.size(text)
+			if x+2*self.BORDER_SIZE > self.screen_size[0]:
+				pass # some way to split by a space in the middle
+				print "Message too long!"
+			self.image = pg.Surface((x+2*self.BORDER_SIZE, y+2*self.BORDER_SIZE), pg.SRCALPHA)
+			self.image.fill((0,0,0,0))
+			self.rect = self.image.get_rect()
+			for i in range(0,self.BORDER_SIZE+1):
+				pg.draw.rect(self.image, tuple(self.backColor+[(i*255)/self.BORDER_SIZE]),
+					[i,i,self.rect.width-2*i,self.rect.height-2*i], 1)
+			txt = self.font.render(text, True, self.textColor, self.backColor)
+			self.image.blit(txt, (self.BORDER_SIZE, self.BORDER_SIZE))
+			self.location = ((self.screen_size[0]-self.rect.width)/2.,
+								self.screen_size[1]-self.rect.height-75)
+		elif self.timer <= 0:
+			self.image = pg.Surface((0,0))
+			self.rect = self.image.get_rect()
+		elif self.timer < 1000:
+			alpha = 255*self.timer/1000.
+			self.image.set_alpha(alpha)
+		

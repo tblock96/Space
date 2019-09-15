@@ -10,6 +10,7 @@ FEATURES:
 Time scaling (1 player) and suggestions (2 player)
 Showing where the user has explored
 	^ is done for easy mode -- keeping track for when the ship is out of comms will be more complicated
+	^ could also implement fog with the lines to blit less area
 minimap
 loss of comms boots ship from controlGroup
 BUGS:
@@ -75,6 +76,8 @@ class HumanView():
 		self.infoMeter = mM.InfoMeter((self.objectGroup))
 		self.meter = mM.mouseMeter((self.objectGroup, self.mouseMeterGroup))
 		self.fog = mM.Fog(self.screen_width, self.screen_height, (self.objectGroup))
+		self.message = mM.Message(self.screen_width, self.screen_height, (self.objectGroup))
+		self.msgs = []
 		
 		self.coverSurf = pg.Surface((self.meter.rect.w, self.meter.rect.h))
 		self.coverSurf.fill(BACKGROUND)
@@ -330,6 +333,7 @@ class HumanView():
 		self.image.fill(BACKGROUND)
 		self.screen.blit(self.image, (0,0))
 		drawn = []
+		
 		while len(self.t.shipGroup) > 0:
 			deltat = self.clock.tick()
 			self.total += deltat
@@ -691,6 +695,11 @@ class HumanView():
 				y = ((self.drag.rect.bottom - (old_view_y)) % usize - self.drag.rect.height)/old_zoom
 				self.screen.blit(self.image, (x,y), (x,y,self.drag.rect.width/old_zoom, self.drag.rect.height/old_zoom))
 			
+				# Cover over message
+			self.screen.blit(self.image, self.message.location,
+				(self.message.location[0], self.message.location[1],
+				self.message.rect.width, self.message.rect.height))
+				
 			done = []
 			
 			for s in vis:   # find new teams
@@ -729,7 +738,6 @@ class HumanView():
 				fogReady.clear()
 			#self.image.blit(self.fog.image, (0,0))
 			
-			
 			self.screen.blit(self.image, (self.screen_width-self.infoMeter.rect.width, 0),
 				(self.screen_width-self.infoMeter.rect.width, 0,
 				self.infoMeter.rect.width, self.infoMeter.rect.height))
@@ -747,6 +755,9 @@ class HumanView():
 				usize, self.zoom, self.timescale, self.locktime)
 			self.mouseMeterGroup.draw(self.screen)
 			
+			self.message.update(deltat, self.msgs)
+			self.msgs = []
+			self.screen.blit(self.message.image, self.message.location)
 			pg.display.flip()
 			
 		print "All ships have died! Ending game."
@@ -771,7 +782,7 @@ class HumanView():
 
 if __name__ == '__main__':
 	screen_size = (1000,600)
-	host = str(input("Input host:\n")) #'2a02:c7d:867:af00:e018:201f:a004:729e' #'localhost' #'fda1:df66:551c:0:e018:201f:a004:729e' #str(input("Input host:\n"))
+	host = str(input("Input host:\n")) #'localhost' #'fda1:df66:551c:0:e018:201f:a004:729e' #str(input("Input host:\n")) #
 	port = 50000 # int(input("Input port:\n"))
 	hv = HumanView(host, port, screen_size)
 	t = threading.Thread(name = 'receive', target = hv.receive_loop)
