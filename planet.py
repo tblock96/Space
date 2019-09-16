@@ -211,8 +211,11 @@ class Planet(pg.sprite.Sprite):
 			img.blit(b.image, b.location)
 			if b.location[0] <= mouse[0] <= b.location[0]+b.width:
 				if b.location[1] <= mouse[1] <= b.location[1]+b.height:
+					b.mouse_on()
 					self.on_click = b.on_click
 					self.on_click_args = b.on_click_args
+				else: b.mouse_off()
+			else: b.mouse_off()
 		for k, lis in self.buildings.items():
 			if k == 'under construction' and self.workRemaining <= 0: continue
 			for b in lis:
@@ -402,8 +405,7 @@ class ProductionBuilding(Building):
 			if self.planet.cache[res] < amt: return False
 		return True
 
-	def askBuild(self, last = 0):
-		# TODO this graphically
+	def askBuild(self, _):
 		num_but = len(self.planet.buttons)
 		i = 0
 		for k, v in self.TASKS.items():
@@ -413,42 +415,10 @@ class ProductionBuilding(Building):
 			string = string + " w: " +str(v['work'])
 			self.planet.buttons.append(Button(string, [300,100+50*i], 'new production', [self.index, k]))
 			i += 1
-		self.planet.buttons.append(Button('DONE', [300, 150+50*i], self.stop_ask_build, num_but))
-		'''
-		if last:
-			attempt = last
-		else:
-			print "A building on planet %s needs new production instructions." \
-				%self.planet.name
-			print "Option Material Energy Work"
-		
-			for k, v in self.TASKS.items():
-				string = k + " "*3
-				res = v['resources']
-				string = string + str(res['material']) + " "*5 + str(res['energy'])\
-					+ " "*5
-				string = string + str(v['work'])
-				print string
-			attempt = 0
-			while attempt not in self.TASKS.keys():
-				if attempt != 0: print "That is not a valid selection"
-				try:
-					attempt = str(input("What would you like to build?\n"))
-				except Exception: pass
-			return attempt
-		self.task = {'resources':{}}
-		for k, v in self.TASKS[attempt]['resources'].items():
-			self.task['resources'][k] = v
-		self.task['work'] = self.TASKS[attempt]['work']
-		self.task["name"] = attempt
-		self.workRemaining = self.task['work']
-		self.currently = True
-		if self.task['name'] != 'stop':
-			self.planet.workDivision += 1
-		'''
+		self.planet.buttons.append(Button('DONE', [300, 150+50*i], self.stop_ask_build, [num_but,i+1]))
 	
-	def stop_ask_build(self, num_but):
-		self.planet.buttons = self.planet.buttons[0:num_but]
+	def stop_ask_build(self, args):
+		self.planet.buttons = self.planet.buttons[0:args[0]]+self.planet.buttons[args[0]+args[1]:]
 	
 	def new_task(self, key):
 		self.task_queue.append(key)
@@ -628,6 +598,12 @@ class Button(pg.sprite.Sprite):
 		txt = self.font.render(self.text, True, self.TEXT_COLOR, self.BACK_COLOR)
 		img.blit(txt, (self.BORDER_SIZE, self.BORDER_SIZE))
 		return img
+	
+	def mouse_off(self):
+		pg.draw.rect(self.image, self.BACK_COLOR, [0,0,self.width-1,self.height-1],self.BORDER_SIZE/2)
+	
+	def mouse_on(self):
+		pg.draw.rect(self.image, self.TEXT_COLOR, [0,0,self.width-1,self.height-1],self.BORDER_SIZE/2)
 
 BUILDINGS = {'production': ProductionBuilding, 'farming': FarmingBuilding,
 	'material': MiningBuilding, 'comms': CommsBuilding,
