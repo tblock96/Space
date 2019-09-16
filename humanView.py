@@ -410,15 +410,30 @@ class HumanView():
 							self.planetFocus = hoverPlanet
 							self.back = 0
 							self.old_view = self.view_x, self.view_y
-						if self.planetFocus:
-							if self.planetFocus.buildingSelect:
+						elif self.planetFocus:
+							on_click = self.planetFocus.on_click
+							on_click_args = self.planetFocus.on_click_args
+							'''
 								attempt = self.planetFocus.buildingSelect.askBuild()
-								if attempt != None:
-									dict = {'msg type': 'building',
-										'planet': self.planetFocus.index,
-										'building': self.planetFocus.buildingSelect.index,
-										'attempt': attempt}
-									self.add_to_msg(dict)
+							'''
+							if on_click == 'new building':
+								self.new_building(on_click_args)
+							elif on_click == 'new production':
+								dict = {'msg type': 'building',
+									'planet': self.planetFocus.index,
+									'building': on_click_args[0],
+									'attempt': on_click_args[1]}
+								self.add_to_msg(dict)
+							else:
+								on_click(on_click_args)
+							'''
+							elif on_click != None:
+								dict = {'msg type': 'building',
+									'planet': self.planetFocus.index,
+									'building': self.planetFocus.buildingSelect.index,
+									'attempt': attempt}
+								self.add_to_msg(dict)
+							'''
 						else:
 							self.dragging = True
 							
@@ -547,7 +562,7 @@ class HumanView():
 				elif k == K_b:
 					if self.planetFocus:
 						attempt = self.planetFocus.askBuild()
-						self.new_building(attempt)
+						#self.new_building(attempt)
 				elif k == K_ESCAPE:
 					for s in controlGroup.sprites():
 						s.control = False

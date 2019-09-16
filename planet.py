@@ -12,6 +12,7 @@ FEATURES:
 ui for choosing production of buildings and ships
 cost of building a building
 '''
+#TODO adding a button for production goto START HERE
 
 import pygame as pg
 import random as rand
@@ -59,6 +60,16 @@ class Planet(pg.sprite.Sprite):
 		self.land = rand.randint(5,15)
 		self.team = 0
 		self.update(0,0)
+		
+		# button setup
+		self.buttons = []
+		list = BUILDINGS.keys()
+		for i in range(len(list)):
+			l = list[i]
+			if l == 'under construction': continue
+			self.buttons.append(Button(l, [100, 100+50*i], 'new building', l))
+		self.on_click = None
+		self.on_click_args = None
 	
 	def build(self, toBuild):
 		if self.land < 1: return
@@ -194,20 +205,33 @@ class Planet(pg.sprite.Sprite):
 		pg.draw.circle(img, self.forecolor,(screen[0]/2,screen[1]/2),5*min_d/16, min_d/16)
 		count = 0
 		mouse = pg.mouse.get_pos()
+		self.on_click = self.nothing
+		for i in range(len(self.buttons)):
+			b = self.buttons[i]
+			img.blit(b.image, b.location)
+			if b.location[0] <= mouse[0] <= b.location[0]+b.width:
+				if b.location[1] <= mouse[1] <= b.location[1]+b.height:
+					self.on_click = b.on_click
+					self.on_click_args = b.on_click_args
 		for k, lis in self.buildings.items():
 			if k == 'under construction' and self.workRemaining <= 0: continue
 			for b in lis:
 				count += 1
 				b.update(screen, count, mouse)
 				img.blit(b.image, (b.rect.x, b.rect.y))
+		'''
 		if self.team != 0:
 			logo = pg.transform.scale(self.team.logo, (min_d/5, min_d/5))
 			img.blit(logo, (screen[0]/2-min_d/10, screen[1]/2-min_d/10))
+		'''
+		logo = pg.transform.scale(self.team.logo, (min_d/5, min_d/5))
+		img.blit(logo, (screen[0]/2-min_d/10, screen[1]/2-min_d/10))
 		return img
 	
 	def askBuild(self):
 		attempt = 0
 		list = BUILDINGS.keys()
+		'''
 		while attempt not in list:
 			if attempt != 0:
 				print "That is not a valid response"
@@ -215,7 +239,11 @@ class Planet(pg.sprite.Sprite):
 			try:
 				attempt = input("What would you like to build?\n")
 			except Exception: pass
+		'''
 		return attempt
+	
+	def nothing(_):
+		return None
 
 class Building(pg.sprite.Sprite):
 	
@@ -312,15 +340,17 @@ class ProductionBuilding(Building):
 			
 	def __init__(self, planet):
 		Building.__init__(self,planet)
-		self.currently = 0
+		self.current_task = 0
 		self.workRemaining = 0
+		self.task_queue = []
+		self.planet.buttons.append(Button('CHOOSE PRODUCTION', [150, len(self.planet.buttons)*50+150], self.askBuild,None)) # START HERE
 	
 	def work(self, time):
 		p = self.planet
-		t = self.task
-		if not (t and self.currently):
-			self.askBuild('stop')
-		if t['name'] == 'stop': return
+		if self.current_task == 0:
+			self.get_next_task()
+		t = self.current_task
+		if t == 0:return
 		if self.hasResources():
 			rate = p.population * p.government / p.workDivision
 			self.workRemaining -= rate * time
@@ -348,19 +378,43 @@ class ProductionBuilding(Building):
 					p.location[1]+100*um.sin(dir), p.usize])
 				self.team.acquireShip(s, [p.location[0],
 					p.location[1]])
-				self.askBuild(t['name'])
+				self.get_next_task()
 		else:
 			print "Planet %d does not have enough resources to do its work!" \
 				%p.index
-			t = self.currently = 0
+			self.get_next_task()
 	
+	def get_next_task(self):
+		if len(self.task_queue) > 0:
+			attempt = self.task_queue[0]
+			self.current_task = {'resources':{}}
+			for k, v in self.TASKS[attempt]['resources'].items():
+				self.current_task['resources'][k] = v
+			self.current_task['work'] = self.TASKS[attempt]['work']
+			self.current_task["name"] = attempt
+			self.workRemaining = self.current_task['work']
+			self.planet.workDivision += 1
+			self.task_queue = self.task_queue[1:]
+		else: self.current_task = 0
+		
 	def hasResources(self):
-		for res, amt in self.task['resources'].items():
+		for res, amt in self.current_task['resources'].items():
 			if self.planet.cache[res] < amt: return False
 		return True
 
 	def askBuild(self, last = 0):
 		# TODO this graphically
+		num_but = len(self.planet.buttons)
+		i = 0
+		for k, v in self.TASKS.items():
+			string = k+""
+			res = v['resources']
+			string = string + " m: "+str(res['material']) + " e: " + str(res['energy'])
+			string = string + " w: " +str(v['work'])
+			self.planet.buttons.append(Button(string, [300,100+50*i], 'new production', [self.index, k]))
+			i += 1
+		self.planet.buttons.append(Button('DONE', [300, 150+50*i], self.stop_ask_build, num_but))
+		'''
 		if last:
 			attempt = last
 		else:
@@ -391,6 +445,13 @@ class ProductionBuilding(Building):
 		self.currently = True
 		if self.task['name'] != 'stop':
 			self.planet.workDivision += 1
+		'''
+	
+	def stop_ask_build(self, num_but):
+		self.planet.buttons = self.planet.buttons[0:num_but]
+	
+	def new_task(self, key):
+		self.task_queue.append(key)
 
 class GovernmentBuilding(ProductionBuilding):
 	type = 'government'
@@ -545,6 +606,28 @@ class LuxuryBuilding(Building):
 	def work(self, time):
 		self.planet.lxrt += 0.1
 
+class Button(pg.sprite.Sprite):
+	BORDER_SIZE = 5
+	TEXT_COLOR = (255,255,255)
+	BACK_COLOR = (180,150,25)	# mustard yellow
+	
+	def __init__(self, text, location, on_click, on_click_args):
+		self.text = text
+		self.location = location
+		self.on_click = on_click
+		self.on_click_args = on_click_args
+		self.font = pg.font.SysFont('arial', 14)
+		self.image = self.get_image()
+		self.width = self.image.get_width()
+		self.height = self.image.get_height()
+	
+	def get_image(self):
+		x,y = self.font.size(self.text)
+		img = pg.Surface((x+2*self.BORDER_SIZE, y+2*self.BORDER_SIZE))
+		img.fill(self.BACK_COLOR)
+		txt = self.font.render(self.text, True, self.TEXT_COLOR, self.BACK_COLOR)
+		img.blit(txt, (self.BORDER_SIZE, self.BORDER_SIZE))
+		return img
 
 BUILDINGS = {'production': ProductionBuilding, 'farming': FarmingBuilding,
 	'material': MiningBuilding, 'comms': CommsBuilding,

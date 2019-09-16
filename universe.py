@@ -65,7 +65,7 @@ class Universe(pg.sprite.Sprite):
 
 	def update_building(self, line, index):
 		b = self.get_building(line['planet'], line['building'])
-		b.askBuild(line['attempt'])
+		b.new_task(line['attempt'])
 	
 	def get_building(self, planet_index, building_index):
 		p = self.planets[planet_index]
