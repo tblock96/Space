@@ -4,7 +4,7 @@ A controller for all the planets in the game, as well as the teams, and also
 each ship (split up by teams).
 '''
 
-VERSION = '0.02'
+VERSION = '0.03'
 import pygame as pg
 import planet
 import unimath as um
@@ -197,6 +197,11 @@ class Universe(pg.sprite.Sprite):
 			dict['type'] = s.__class__.type
 			dict['planet'] = s.planet.index
 			dict['index'] = s.index
+			if s.__class__.type == 'production':
+				if s.current_task == 0:
+					dict['task_queue'] = [0]
+				else:
+					dict['task_queue'] = [s.current_task['name']]+s.task_queue
 		self.send(dict, index)
 	
 	def send_ready(self, index):

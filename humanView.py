@@ -17,7 +17,7 @@ BUGS:
 
 '''
 
-VERSION = '0.02'
+VERSION = '0.03'
 
 LINE_SPACING = 500
 FOG_SPACING = 125
@@ -140,6 +140,8 @@ class HumanView():
 	
 	def update_building(self, line):
 		b = self.get_building(line)
+		if line['type'] == 'production':
+			b.update_task_queue(line['task_queue'])
 	
 	def get_building(self, line):
 		planet_index = line['planet']
@@ -424,6 +426,7 @@ class HumanView():
 									'building': on_click_args[0],
 									'attempt': on_click_args[1]}
 								self.add_to_msg(dict)
+								self.planetFocus.buildings['production'][0].new_task(on_click_args[1])
 							else:
 								on_click(on_click_args)
 							'''

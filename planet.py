@@ -62,12 +62,12 @@ class Planet(pg.sprite.Sprite):
 		self.update(0,0)
 		
 		# button setup
-		self.buttons = []
+		self.buttons = {}
 		list = BUILDINGS.keys()
 		for i in range(len(list)):
 			l = list[i]
 			if l == 'under construction': continue
-			self.buttons.append(Button(l, [100, 100+50*i], 'new building', l))
+			self.add_button(l, [100, 100+50*i], 'new building', l)
 		self.on_click = None
 		self.on_click_args = None
 	
@@ -206,8 +206,7 @@ class Planet(pg.sprite.Sprite):
 		count = 0
 		mouse = pg.mouse.get_pos()
 		self.on_click = self.nothing
-		for i in range(len(self.buttons)):
-			b = self.buttons[i]
+		for b in self.buttons.values():
 			img.blit(b.image, b.location)
 			if b.location[0] <= mouse[0] <= b.location[0]+b.width:
 				if b.location[1] <= mouse[1] <= b.location[1]+b.height:
@@ -245,7 +244,15 @@ class Planet(pg.sprite.Sprite):
 		'''
 		return attempt
 	
-	def nothing(_):
+	def add_button(self, text, location, on_click, on_click_args):
+		self.buttons[text] = Button(text, location, on_click, on_click_args)
+	
+	def remove_button(self, text):
+		try:
+			del self.buttons[text]
+		except KeyError: print "Queue button key error: %s" %text
+	
+	def nothing(self, _):
 		return None
 
 class Building(pg.sprite.Sprite):
@@ -336,8 +343,8 @@ class ProductionBuilding(Building):
 			'battleship': {'resources':{'material':1750, 'energy':2000}, 'work':30000},
 			'carrier': {'resources':{'material':2500, 'energy':1000}, 'work':40000},
 			'settler': {'resources':{'material':2500, 'energy':1500}, 'work':30000},
-			'merchant': {'resources':{'material':2000, 'energy':600}, 'work':15000},
-			'stop': {'resources':{'material':0, 'energy':0}, 'work':9999999}}
+			'merchant': {'resources':{'material':2000, 'energy':600}, 'work':15000}}#,
+			#'stop': {'resources':{'material':0, 'energy':0}, 'work':9999999}}
 	
 	energy, material = 1000, 1000
 			
@@ -346,7 +353,7 @@ class ProductionBuilding(Building):
 		self.current_task = 0
 		self.workRemaining = 0
 		self.task_queue = []
-		self.planet.buttons.append(Button('CHOOSE PRODUCTION', [150, len(self.planet.buttons)*50+150], self.askBuild,None)) # START HERE
+		self.planet.add_button('CHOOSE PRODUCTION', [150, len(self.planet.buttons)*50+150], self.askBuild,None)
 	
 	def work(self, time):
 		p = self.planet
@@ -413,15 +420,38 @@ class ProductionBuilding(Building):
 			res = v['resources']
 			string = string + " m: "+str(res['material']) + " e: " + str(res['energy'])
 			string = string + " w: " +str(v['work'])
-			self.planet.buttons.append(Button(string, [300,100+50*i], 'new production', [self.index, k]))
+			self.planet.add_button(string, [300,100+50*i], 'new production', [self.index, k])
 			i += 1
-		self.planet.buttons.append(Button('DONE', [300, 150+50*i], self.stop_ask_build, [num_but,i+1]))
+		self.planet.add_button('DONE', [300, 150+50*i], self.stop_ask_build, None)
 	
-	def stop_ask_build(self, args):
-		self.planet.buttons = self.planet.buttons[0:args[0]]+self.planet.buttons[args[0]+args[1]:]
+	def stop_ask_build(self, _):
+		for k in self.TASKS.keys():
+			self.planet.remove_button(k)
 	
 	def new_task(self, key):
 		self.task_queue.append(key)
+	
+	def update_task_queue(self, tq):
+		if self.rect == 0: return
+		if str(self.index)+'0' not in self.planet.buttons.keys():
+			for i in range(5):
+				self.planet.add_button(str(self.index)+str(i),[self.rect.x+50,self.rect.y+30*i],self.planet.nothing,None)
+		self.task_queue = tq
+		i = 0
+		end = 0
+		while i < 5:
+			if i >= len(self.task_queue): end = 1
+			if not end:
+				t = self.task_queue[i]
+			b = self.planet.buttons[str(self.index)+str(i)]
+			if t == 0: end = 1
+			if end:
+				b.text = '--'
+			else:
+				b.text = t
+			b.update_image()
+			i += 1
+		
 
 class GovernmentBuilding(ProductionBuilding):
 	type = 'government'
@@ -587,9 +617,13 @@ class Button(pg.sprite.Sprite):
 		self.on_click = on_click
 		self.on_click_args = on_click_args
 		self.font = pg.font.SysFont('arial', 14)
+		self.update_image()
+	
+	def update_image(self):
 		self.image = self.get_image()
 		self.width = self.image.get_width()
 		self.height = self.image.get_height()
+		self.mouse_was_on = 0
 	
 	def get_image(self):
 		x,y = self.font.size(self.text)
@@ -600,10 +634,14 @@ class Button(pg.sprite.Sprite):
 		return img
 	
 	def mouse_off(self):
-		pg.draw.rect(self.image, self.BACK_COLOR, [0,0,self.width-1,self.height-1],self.BORDER_SIZE/2)
+		if self.mouse_was_on:
+			pg.draw.rect(self.image, self.BACK_COLOR, [0,0,self.width-1,self.height-1],self.BORDER_SIZE/2)
+			self.mouse_was_on = 0
 	
 	def mouse_on(self):
-		pg.draw.rect(self.image, self.TEXT_COLOR, [0,0,self.width-1,self.height-1],self.BORDER_SIZE/2)
+		if not self.mouse_was_on:
+			pg.draw.rect(self.image, self.TEXT_COLOR, [0,0,self.width-1,self.height-1],self.BORDER_SIZE/2)
+			self.mouse_was_on = 1
 
 BUILDINGS = {'production': ProductionBuilding, 'farming': FarmingBuilding,
 	'material': MiningBuilding, 'comms': CommsBuilding,
