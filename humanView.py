@@ -800,7 +800,10 @@ class HumanView():
 
 if __name__ == '__main__':
 	screen_size = (1000,600)
-	host = str(input("Input host:\n")) #'localhost' #'fda1:df66:551c:0:e018:201f:a004:729e' #str(input("Input host:\n")) #
+	if len(sys.argv) == 2:
+		host = sys.argv[1]
+	else:
+		host = str(input("Input host:\n")) #'localhost' #'fda1:df66:551c:0:e018:201f:a004:729e' #str(input("Input host:\n")) #
 	port = 50000 # int(input("Input port:\n"))
 	hv = HumanView(host, port, screen_size)
 	t = threading.Thread(name = 'receive', target = hv.receive_loop)

@@ -322,11 +322,10 @@ def get_connections(u, sock):
 		u.send_setup(conn, i)
 	main(u)
 
-def setup():
+def setup(easy):
 	pg.init()
 	
 	# Universe(size, teams)
-	easy = input('Comms infinite? (1/0)\n')
 	u = Universe(SIZE,TEAMS, easy)
 	
 	for t in u.teams.values():	# give initial armada
@@ -367,7 +366,14 @@ def setup():
 	
 if __name__ == "__main__":
 	client = False
-	SIZE = input("How big (in 1000s) would you like the map to be?\n")
-	TEAMS = input("How many teams?\n")
-	NUM_HUMANS = input("How many human players?\n")
-	setup()
+	if len(sys.argv) == 5:
+		SIZE = int(sys.argv[1])
+		TEAMS = int(sys.argv[2])
+		NUM_HUMANS = int(sys.argv[3])
+		easy = int(sys.argv[4])
+	else:
+		SIZE = input("How big (in 1000s) would you like the map to be?\n")
+		TEAMS = input("How many teams?\n")
+		NUM_HUMANS = input("How many human players?\n")
+		easy = input('Comms infinite? (1/0)\n')
+	setup(easy)

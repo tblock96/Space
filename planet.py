@@ -246,6 +246,7 @@ class Planet(pg.sprite.Sprite):
 	
 	def add_button(self, text, location, on_click, on_click_args):
 		self.buttons[text] = Button(text, location, on_click, on_click_args)
+		return self.buttons[text]
 	
 	def remove_button(self, text):
 		try:
@@ -420,13 +421,16 @@ class ProductionBuilding(Building):
 			res = v['resources']
 			string = string + " m: "+str(res['material']) + " e: " + str(res['energy'])
 			string = string + " w: " +str(v['work'])
-			self.planet.add_button(string, [300,100+50*i], 'new production', [self.index, k])
+			b = self.planet.add_button(k, [300,100+50*i], 'new production', [self.index, k])
+			b.text = string
+			b.update_image()
 			i += 1
 		self.planet.add_button('DONE', [300, 150+50*i], self.stop_ask_build, None)
 	
 	def stop_ask_build(self, _):
 		for k in self.TASKS.keys():
 			self.planet.remove_button(k)
+		self.planet.remove_button('DONE')
 	
 	def new_task(self, key):
 		self.task_queue.append(key)
